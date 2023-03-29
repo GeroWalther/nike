@@ -6,15 +6,24 @@ import {
   FlatList,
   useWindowDimensions,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 // import { Ionicons } from "@expo/vector-icons";
 import Btn from "../components/Btn";
 
-import { useSelector, useDispatch } from "react-redux";
+import {
+  // useSelector,
+  useDispatch,
+} from "react-redux";
 import { cartSlice } from "../store/cartSlice";
 
-const ProductDetailsScreen = () => {
-  const product = useSelector((state) => state.products.selectedProduct);
+import { useGetProductQuery } from "../store/apiSlice";
+
+const ProductDetailsScreen = ({ route }) => {
+  const id = route.params.id;
+  const { data, isLoading, error } = useGetProductQuery(id);
+
+  // const product = useSelector((state) => state.products.selectedProduct);
   const dispatch = useDispatch();
 
   const { width } = useWindowDimensions();
@@ -22,6 +31,15 @@ const ProductDetailsScreen = () => {
   function addToCart() {
     dispatch(cartSlice.actions.addCartItem({ product }));
   }
+  if (isLoading) {
+    return <ActivityIndicator />;
+  }
+
+  if (error) {
+    return <Text>Error fetching the product. {error.error}</Text>;
+  }
+
+  const product = data.data;
 
   return (
     <View>
