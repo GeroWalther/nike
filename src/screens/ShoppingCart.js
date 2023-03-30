@@ -1,24 +1,57 @@
-import { FlatList } from "react-native";
+import { FlatList, Alert } from "react-native";
 import Btn from "../components/Btn";
 import CartListItem from "../components/CartListItem";
 import ListFooter from "../components/ListFooter";
-
-import { useSelector } from "react-redux";
+import { useCreateOrderMutation } from "../store/apiSlice";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  selectSubtotal,
+  selectDeliveryPrice,
+  selectTotal,
+  cartSlice,
+} from "../store/cartSlice";
 
 const ShoppingCart = () => {
-  const cart = useSelector((state) => state.cart.items);
+  const subtotal = useSelector(selectSubtotal);
+  const delivery = useSelector(selectDeliveryPrice);
+  const total = useSelector(selectTotal);
+  const dispatch = useDispatch();
 
-  function checkout() {
-    console.log("Checkout pressed!");
+  const cartItems = useSelector((state) => state.cart.items);
+
+  const [createOrder, { data, error, isLoading }] = useCreateOrderMutation();
+
+  async function onCheckout() {
+    const result = await createOrder({
+      items: cartItems,
+      subtotal,
+      delivery,
+      total,
+      customer: {
+        name: "Gero",
+        address: "123 Main St.",
+        email: "gerosmail@gm.com",
+      },
+    });
+    if (result.data?.status === "OK") {
+      Alert.alert(
+        "Order has been submitted",
+        `Your order reference for tracking is: ${result.data.data.ref}`
+      );
+      dispatch(cartSlice.actions.clear());
+    }
   }
+
   return (
     <>
       <FlatList
-        data={cart}
+        data={cartItems}
         renderItem={({ item }) => <CartListItem cartItem={item} />}
         ListFooterComponent={ListFooter}
       />
-      <Btn onPress={checkout}>Checkout</Btn>
+      <Btn onPress={onCheckout} isLoading={isLoading}>
+        Checkout
+      </Btn>
     </>
   );
 };
